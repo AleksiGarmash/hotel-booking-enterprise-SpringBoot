@@ -2,7 +2,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/hotel_db
     username: postgres
-    password: Bbceccgfcbntkm1
+    password: pass
     driver-class-name: org.postgresql.Driver
 
   jpa:
