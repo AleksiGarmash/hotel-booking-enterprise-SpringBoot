@@ -43,7 +43,7 @@ public class HotelService {
         return hotelMapper.hotelToResponse(
                 hotelRepository.findById(id)
                         .orElseThrow(() -> new ResourceNotFoundException(
-                                MessageFormat.format("Hotel with ID {} not found", id))));
+                                MessageFormat.format("Hotel with ID {0} not found", id))));
     }
 
 
@@ -61,7 +61,7 @@ public class HotelService {
         log.info("Updating Hotel with ID: {}", id);
 
         Hotel hotel = hotelRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException(
-                MessageFormat.format("Hotel with ID {} not found", id)));
+                MessageFormat.format("Hotel with ID {0} not found", id)));
 
         Double currentRating = hotel.getRating();
         Integer currentNumberOfRating = hotel.getNumberOfRatings();
@@ -86,7 +86,7 @@ public class HotelService {
         log.info("Deleting Hotel with ID: {}", id);
 
         if (!hotelRepository.existsById(id)) {
-            throw new ResourceNotFoundException(MessageFormat.format("Hotel with ID {} not found", id));
+            throw new ResourceNotFoundException(MessageFormat.format("Hotel with ID {0} not found", id));
         }
 
         hotelRepository.deleteById(id);
@@ -102,7 +102,7 @@ public class HotelService {
         }
 
         Hotel hotel = hotelRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageFormat.format("Hotel with ID {} mot found!", id)));
+                .orElseThrow(() -> new ResourceNotFoundException(MessageFormat.format("Hotel with ID {0} mot found!", id)));
 
         Double currentRating = hotel.getRating();
         Integer currentNumberOfRating = hotel.getNumberOfRatings();

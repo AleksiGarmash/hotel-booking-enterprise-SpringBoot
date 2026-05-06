@@ -12,7 +12,6 @@ import com.example.spring.booking.web.model.user.UserRequest;
 import com.example.spring.booking.web.model.user.UserResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -41,7 +40,7 @@ public class UserService implements UserDetailsService {
         log.info("Loading User by username: {}", username);
 
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException(MessageFormat.format("User not found: {}", username)));
+                .orElseThrow(() -> new UsernameNotFoundException(MessageFormat.format("User not found: {0}", username)));
 
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getUsername())
@@ -66,14 +65,14 @@ public class UserService implements UserDetailsService {
         log.info("Get User by ID: {}", id);
 
         return userMapper.userToResponse(userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageFormat.format("User with ID {} not found!", id))));
+                .orElseThrow(() -> new ResourceNotFoundException(MessageFormat.format("User with ID {0} not found!", id))));
     }
 
     public UserResponse findByUsername(String username) {
         log.info("Get User by username: {}", username);
 
         return userMapper.userToResponse(userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageFormat.format("User with username {} nit found!", username))));
+                .orElseThrow(() -> new ResourceNotFoundException(MessageFormat.format("User with username {0} nit found!", username))));
     }
 
     @Transactional
@@ -82,7 +81,7 @@ public class UserService implements UserDetailsService {
 
         if (userRepository.existsByUsernameOrEmail(request.getUsername(), request.getEmail())) {
             throw new InvalidDataException(
-                    MessageFormat.format("User with username {} and email {} already exist", request.getUsername(), request.getEmail()));
+                    MessageFormat.format("User with username {0} and email {1} already exist", request.getUsername(), request.getEmail()));
         }
 
         User user = userMapper.requestToUser(request);
@@ -104,20 +103,20 @@ public class UserService implements UserDetailsService {
         log.info("Updating User: {}, {}", id, request.getUsername());
 
         User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException(
-                MessageFormat.format("User with ID {} not found!", id)));
+                MessageFormat.format("User with ID {0} not found!", id)));
 
         if (request.getUsername() != null &&
             !request.getUsername().equals(user.getUsername()) &&
             userRepository.existsByUsername(request.getUsername())) {
             throw new InvalidDataException(
-                    MessageFormat.format("User with username {} already exist!", request.getUsername()));
+                    MessageFormat.format("User with username {0} already exist!", request.getUsername()));
         }
 
         if (request.getEmail() != null &&
             !request.getEmail().equals(user.getEmail()) &&
             userRepository.existsByEmail(request.getEmail())) {
             throw new InvalidDataException(
-                    MessageFormat.format("User with email {} already exist!", request.getEmail()));
+                    MessageFormat.format("User with email {0} already exist!", request.getEmail()));
         }
 
         user.setUsername(request.getUsername());
@@ -135,7 +134,7 @@ public class UserService implements UserDetailsService {
         log.info("Deleting User with ID: {}", id);
 
         if (!userRepository.existsById(id)) {
-            throw new ResourceNotFoundException(MessageFormat.format("User with ID {} not found!", id));
+            throw new ResourceNotFoundException(MessageFormat.format("User with ID {0} not found!", id));
         }
 
         userRepository.deleteById(id);

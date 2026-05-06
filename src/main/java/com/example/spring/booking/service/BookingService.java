@@ -62,7 +62,7 @@ public class BookingService {
         log.info("Get Booking by ID: {}", id);
 
         return bookingMapper.bookingToResponse(bookingRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageFormat.format("Booking with ID {} not found", id))));
+                .orElseThrow(() -> new ResourceNotFoundException(MessageFormat.format("Booking with ID {0} not found", id))));
     }
 
     public List<BookingResponse> findByRoomId(Long roomId) {
@@ -81,10 +81,10 @@ public class BookingService {
                 request.getRoomId(), request.getUserId(), request.getCheckInDate(), request.getCheckOutDate());
 
         Room room = roomRepository.findById(request.getRoomId())
-                .orElseThrow(() -> new ResourceNotFoundException(MessageFormat.format("Room with ID {} not found!", request.getRoomId())));
+                .orElseThrow(() -> new ResourceNotFoundException(MessageFormat.format("Room with ID {0} not found!", request.getRoomId())));
 
         User user = userRepository.findById(request.getUserId())
-                        .orElseThrow(() -> new ResourceNotFoundException(MessageFormat.format("User with ID {} not found!", request.getUserId())));
+                        .orElseThrow(() -> new ResourceNotFoundException(MessageFormat.format("User with ID {0} not found!", request.getUserId())));
 
         validateDates(request.getCheckInDate(), request.getCheckOutDate());
         if (!isRoomAvailable(request.getRoomId(), request.getCheckInDate(), request.getCheckOutDate())) {
@@ -120,12 +120,12 @@ public class BookingService {
                 id, request.getCheckInDate(), request.getCheckOutDate());
 
         Booking booking = bookingRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageFormat.format("Booking with ID {} not found!", id)));
+                .orElseThrow(() -> new ResourceNotFoundException(MessageFormat.format("Booking with ID {0} not found!", id)));
 
         Room room;
         if (request.getRoomId() != null && !request.getRoomId().equals(booking.getRoom().getId())) {
             room = roomRepository.findById(request.getRoomId())
-                    .orElseThrow(() -> new ResourceNotFoundException(MessageFormat.format("Room with ID {} not found!", request.getRoomId())));
+                    .orElseThrow(() -> new ResourceNotFoundException(MessageFormat.format("Room with ID {0} not found!", request.getRoomId())));
         } else {
             room = booking.getRoom();
         }
@@ -133,7 +133,7 @@ public class BookingService {
         User user;
         if (request.getUserId() != null && !request.getUserId().equals(booking.getUser().getId())) {
             user = userRepository.findById(request.getUserId())
-                    .orElseThrow(() -> new ResourceNotFoundException(MessageFormat.format("User with ID {} not found!", request.getUserId())));
+                    .orElseThrow(() -> new ResourceNotFoundException(MessageFormat.format("User with ID {0} not found!", request.getUserId())));
         } else {
             user = booking.getUser();
         }
@@ -159,7 +159,7 @@ public class BookingService {
         log.info("Canceling Booking: {}", id);
 
         if (!bookingRepository.existsById(id)) {
-            throw new ResourceNotFoundException(MessageFormat.format("Booking with ID {} not found!", id));
+            throw new ResourceNotFoundException(MessageFormat.format("Booking with ID {0} not found!", id));
         }
 
         bookingRepository.deleteById(id);
