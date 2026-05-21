@@ -1,163 +1,106 @@
-# Hotel Booking System (Enterprise Spring Boot) 
+# Hotel Booking System
 
-## Описание проекта
+Event-driven система бронирования отелей на Spring Boot.
 
-**Полноценная система бронирования отелей** с **JPA**, **Spring Security**, **Kafka**, **MongoDB** и **CSV экспортом статистики**.
+## Стек технологий
 
-**Сущности**: User → Hotel → Room → Booking + **Event-Driven Statistics** (Kafka → MongoDB).
-
----
+| Слой | Технологии |
+|------|-----------|
+| Backend | Java 17, Spring Boot 3.1.5 |
+| Security | Spring Security + JWT |
+| База данных | PostgreSQL, MongoDB (Event Sourcing) |
+| Messaging | Apache Kafka (3 топика) |
+| Прочее | MapStruct, Lombok, Docker Compose |
 
 ## Архитектура
-```text
 
-Frontend → REST API → Services → JPA/PostgreSQL
-↓ Kafka Events
-MongoDB Statistics ← Kafka Consumer
+```
+src/main/java/com/example/spring/booking/
+├── config/          — SecurityConfig, SitesList
+├── controllers/     — BookingController, HotelController, RoomController, UserController
+├── entity/          — Booking, Hotel, Room, User, Role
+├── exception/       — GlobalExceptionHandler, ResourceNotFoundException, RoomNotAvailableException
+├── mapper/          — BookingMapper, HotelMapper (MapStruct + Delegate)
+├── repository/      — BookingRepository, HotelRepository, RoomRepository, UserRepository
+├── services/        — бизнес-логика (BookingService, HotelService, UserService)
+├── statistic/
+│   ├── producer/    — KafkaEventPublisher
+│   ├── consumer/    — StatisticsKafkaConsumer
+│   ├── event/       — BookingEvent, UserRegistrationEvent
+│   └── document/    — StatisticDocument (MongoDB)
+└── web/model/       — DTO запросов и ответов
 ```
 
-**Технологии**:
-- Spring Boot 3.x + JPA + Specifications
-- Spring Security (ROLE_ADMIN/USER)
-- Kafka (Producer/Consumer) + 3 топика
-- MongoDB Reactive для статистики
-- MapStruct + Delegate Mappers
-- CSV Export (Apache Commons CSV)
-- Docker Compose (PostgreSQL + Kafka + MongoDB)
+## Как запустить
 
----
+### 1. Требования
+- Java 17+, Maven 3.8+
+- PostgreSQL 15+
+- MongoDB
+- Docker Compose (для Kafka)
 
-## Безопасность
-
-**Пользователи** (DataInit):
-- admin:admin123 → ROLE_ADMIN
-- user:user123 → ROLE_USER
-
-**Права доступа**:
-
-| Ресурс | ADMIN | USER |
-|--------|-------|------|
-| `/api/users/register` | permitAll | permitAll |
-| `/api/hotels/**` | CRUD | GET |
-| `/api/rooms/**` | CRUD | GET |
-| `/api/bookings/**` | CRUD | GET (свои) |
-| `/api/statistics/**` | Только | - |
-
----
-
-## Эндпоинты API
-
-### Users `/api/users`
-```http
-POST /api/users/register # Регистрация (permitAll)
-GET /api/users # Список + пагинация (ADMIN)
-GET /api/users/{id} # По ID (ADMIN)
-```
-
-
-### Hotels `/api/hotels`
-```http
-GET /api/hotels # Список + пагинация
-GET /api/hotels/{id} # По ID
-POST /api/hotels # Создать (ADMIN)
-PUT /api/hotels/{id} # Обновить (ADMIN)
-POST /api/hotels/{id}/rating # Оценить 1-5 
-GET /api/hotels/search # Фильтры + пагинация
-```
-
-### Rooms `/api/rooms`
-```http
-GET /api/rooms # Список + пагинация
-POST /api/rooms # Создать (ADMIN)
-GET /api/rooms/search # Поиск по датам/цене/гостям
-```
-
-### Bookings `/api/bookings`
-```http
-POST /api/bookings # Создать бронь (проверка конфликтов)
-PUT /api/bookings/{id} # Обновить даты/комнату
-DELETE /api/bookings/{id} # Отменить
-GET /api/bookings/search # Фильтры + пагинация
-```
-
-### Statistics `/api/statistics` (ADMIN)
-```http
-GET /api/statistics # Все события
-GET /api/statistics/export/csv # CSV экспорт
-GET /api/statistics/range # По датам
-```
-
----
-
-## Ключевые фичи
-
-### 1. **Kafka Event-Driven**
-- `User.register()` → user-registration topic → MongoDB Statistic
-- `Booking.create()` → booking-events topic → MongoDB Statistic
-
-### 2. **Smart Booking Logic**
-```java
-// Проверка конфликтов брони
-boolean isRoomAvailable(checkIn, checkOut) {
-    return bookings.noneMatch(b → b.overlaps(checkIn, checkOut))
-}
-
-// Авто-расчет цены
-totalPrice = room.price × days
-```
-
-### 3. **Rating System**
-```java
-// Динамический рейтинг отеля
-newRating = (oldRating × count + assessment) / (count + 1)
-```
-
-### 4. **Specifications**
-- Hotel: город, рейтинг, расстояние до центра
-- Room: цена, гости, доступность по датам
-
----
-
-## Запуск
+### 2. Запустить инфраструктуру
 
 ```bash
 docker-compose up -d
+```
+
+Docker Compose поднимает Kafka + Zookeeper.
+
+### 3. Создать базы данных
+
+```sql
+-- PostgreSQL
+CREATE DATABASE hotel_booking;
+```
+
+MongoDB создаётся автоматически.
+
+### 4. Настроить `application.yaml`
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/hotel_booking
+    username: postgres
+    password: ваш_пароль
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/hotel_statistics
+
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+```
+
+### 5. Запустить
+
+```bash
 mvn spring-boot:run
 ```
 
-## Тестирование (Postman)
+## API
 
-### 1. **Регистрация** (permitAll)
+| Метод | Эндпоинт | Описание |
+|-------|----------|----------|
+| POST | `/api/users` | Регистрация |
+| GET | `/api/hotels` | Список отелей |
+| POST | `/api/hotels/{id}/rating` | Оценить отель (1–5) |
+| GET | `/api/rooms?hotelId=&checkIn=&checkOut=` | Доступные номера |
+| POST | `/api/bookings` | Создать бронь |
+| DELETE | `/api/bookings/{id}` | Отменить бронь |
+| GET | `/api/statistics/export` | Экспорт статистики (CSV) |
+
+## Kafka
+
+Три топика обрабатываются независимо:
+- `booking-events` — создание брони → Consumer сохраняет событие в MongoDB
+- `user-registration` — регистрация → статистика пользователей
+
+## Запуск тестов
+
 ```bash
-curl -X POST http://localhost:8080/api/users/register \
-  -u admin:admin123 \
-  -H "Content-Type: application/json" \
-  -d '{"username":"guest","email":"guest@mail.com"}'
+mvn test
 ```
 
-### 2. **Создать отель** (ADMIN)
-```bash
-curl -X POST http://localhost:8080/api/hotels \
-  -u admin:admin123 \
-  -d '{"name":"Hilton","city":"Москва"}'
-```
-
-### 3. **Забронировать комнату**
-```bash
-curl -X POST http://localhost:8080/api/bookings \
-  -u user:user123 \
-  -d '{
-    "roomId": 1,
-    "userId": 2, 
-    "checkInDate": "2026-04-10",
-    "checkOutDate": "2026-04-15"
-  }'
-```
-
-### 4. **Статистика** (ADMIN)
-```bash
-curl http://localhost:8080/api/statistics/export/csv -u admin:admin123
-# ↓ statistics.csv скачивается!
-```
-
----
+Покрытие: BookingServiceTest (10 кейсов), HotelServiceTest (12 кейсов), KafkaTests, UserServiceTest.
